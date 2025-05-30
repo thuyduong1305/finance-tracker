@@ -5,7 +5,10 @@
       class="mb-4"
       help="Choose how you would like to view transactions"
     >
-      <USelect v-model="state.transactionView" />
+      <USelect
+        v-model="state.transactionView"
+        :options="transactionViewOptions"
+      />
     </UFormGroup>
 
     <UButton
@@ -21,26 +24,29 @@
 
 <script setup>
 import { z } from "zod";
+import { transactionViewOptions } from "~/constants";
 
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
 const { toastSuccess, toastError } = useAppToast();
 const pending = ref(false);
 const state = ref({
-  transactionView: null, // Initialization goes here
+  transactionView:
+    user.value.user_metadata?.transaction_view ?? transactionViewOptions[1],
 });
 const schema = z.object({
-  transactionView: null, // ZOD constraints goes here
+  transactionView: z.enum(transactionViewOptions),
 });
 
 const saveSettings = async () => {
   pending.value = true;
 
   try {
-    const { error } = await supabase.auth
-      .updateUser
-      // The data goes here
-      ();
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        transaction_view: state.value.transactionView,
+      },
+    });
     if (error) throw error;
     toastSuccess({
       title: "Settings updated",
